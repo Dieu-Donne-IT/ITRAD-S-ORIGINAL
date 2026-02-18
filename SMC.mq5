@@ -115,6 +115,8 @@
 #include "BalanceOfPower.mqh";
 #include "BalanceOfPowerReverseCandle.mqh";
 #include "OrderBlock.mqh";
+#include "LiquidityCycle.mqh";
+#include "PremiumDiscount.mqh";
 
 
 MACD macd;
@@ -130,6 +132,8 @@ PlotFiboOnChart plotFiboOnChart;
 BalanceOfPower balanceOfPower;
 BalanceOfPowerReverseCandle balanceOfPowerReverseCandle;
 OrderBlock orderBlock;
+LiquidityCycle liquidityCycle;
+PremiumDiscount premiumDiscount;
 
 double FibUpper[], FibLower[];  
 
@@ -204,6 +208,8 @@ int OnInit()
     fibonacci.init(&barData,&macdMarketStructure);
     plotFiboOnChart.init(&fibonacci,&barData);
     orderBlock.Init(&barData,&macdMarketStructure,&fractal,&insideBar,&fibonacci);
+    liquidityCycle.Init(&barData,&macdMarketStructure);
+    premiumDiscount.Init(&barData,&macdMarketStructure,&fibonacci);
     
 
     return(INIT_SUCCEEDED);
@@ -256,6 +262,8 @@ int OnCalculate(const int rates_total,
          fibonacci.update(i,rates_total);
          plotFiboOnChart.update(i,rates_total);
          orderBlock.update(i,rates_total);
+         liquidityCycle.update(i,rates_total);
+         premiumDiscount.update(i,rates_total);
       }else{
          
          macdFractal.macdHighFractalBuffer[i] = EMPTY_VALUE;
@@ -270,22 +278,22 @@ int OnCalculate(const int rates_total,
 
       }
       
-      /*
       static string lastComment = "";
       string newComment = 
-      "Trend: " + macdMarketStructure.getLatestTrendAsString() + "\n"
-      +"Inducement Break: "+macdMarketStructure.isInducementBreak;
-
+          "=== SMV DASHBOARD ===\n"
+          + "Trend: " + macdMarketStructure.getLatestTrendAsString() + "\n"
+          + "Inducement Break: " + (string)macdMarketStructure.isInducementBreak + "\n"
+          + "Buyers (SSL): " + liquidityCycle.getBuyersStateAsString() + "\n"
+          + "Sellers (BSL): " + liquidityCycle.getSellersStateAsString() + "\n"
+          + "Zone: " + premiumDiscount.getCurrentZoneAsString() + "\n"
+          + "Can Buy: " + (string)premiumDiscount.canBuy() + "\n"
+          + "Can Sell: " + (string)premiumDiscount.canSell() + "\n"
+          + "Rallye Possible: " + (string)liquidityCycle.canRallyeStart();
+          
       if(newComment != lastComment) {
           Comment(newComment);
           lastComment = newComment;
-      }*/
-      
-      /*
-      string comment = "TREND :  "+macdMarketStructure.getLatestTrendAsString()+"\n"
-      +"Inducement Taken   :  "+macdMarketStructure.isInducementBreak;
-      Comment(comment);
-      */
+      }
       
 
    return rates_total;
