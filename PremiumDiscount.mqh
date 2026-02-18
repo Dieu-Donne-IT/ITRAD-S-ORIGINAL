@@ -38,7 +38,7 @@ private:
         
         currentPrice = barData.GetClose(index);
         
-        // Define tolerance around equilibrium (0.1% of price)
+        // Define tolerance around equilibrium: 0.1% of price (multiplier: 0.001)
         // This accounts for minor price fluctuations and prevents zone flickering
         // Can be adjusted for different asset classes or timeframes if needed
         double tolerance = currentPrice * 0.001;

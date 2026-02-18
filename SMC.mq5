@@ -279,16 +279,25 @@ int OnCalculate(const int rates_total,
       }
       
       static string lastComment = "";
-      string newComment = 
+      string newComment = StringFormat(
           "=== SMV DASHBOARD ===\n"
-          + "Trend: " + macdMarketStructure.getLatestTrendAsString() + "\n"
-          + "Inducement Break: " + (string)macdMarketStructure.isInducementBreak + "\n"
-          + "Buyers (SSL): " + liquidityCycle.getBuyersStateAsString() + "\n"
-          + "Sellers (BSL): " + liquidityCycle.getSellersStateAsString() + "\n"
-          + "Zone: " + premiumDiscount.getCurrentZoneAsString() + "\n"
-          + "Can Buy: " + (string)premiumDiscount.canBuy() + "\n"
-          + "Can Sell: " + (string)premiumDiscount.canSell() + "\n"
-          + "Rallye Possible: " + (string)liquidityCycle.canRallyeStart();
+          "Trend: %s\n"
+          "Inducement Break: %s\n"
+          "Buyers (SSL): %s\n"
+          "Sellers (BSL): %s\n"
+          "Zone: %s\n"
+          "Can Buy: %s\n"
+          "Can Sell: %s\n"
+          "Rallye Possible: %s",
+          macdMarketStructure.getLatestTrendAsString(),
+          (string)macdMarketStructure.isInducementBreak,
+          liquidityCycle.getBuyersStateAsString(),
+          liquidityCycle.getSellersStateAsString(),
+          premiumDiscount.getCurrentZoneAsString(),
+          (string)premiumDiscount.canBuy(),
+          (string)premiumDiscount.canSell(),
+          (string)liquidityCycle.canRallyeStart()
+      );
           
       if(newComment != lastComment) {
           Comment(newComment);
