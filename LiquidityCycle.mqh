@@ -136,6 +136,11 @@ private:
             }
         }
     }
+    
+    // Helper method to check current trend
+    bool isBullishTrend() {
+        return macdMarketStructure.getLatestTrend() == TREND_BULLISH;
+    }
 
 public:
     LiquidityCycle() {
@@ -205,48 +210,25 @@ public:
     }
     
     bool isSweepComplete() {
-        Trend currentTrend = macdMarketStructure.getLatestTrend();
-        if (currentTrend == TREND_BULLISH) {
-            return (sellersState == LIQ_CLEAN || sellersState == LIQ_RALLYE);
-        }
-        else if (currentTrend == TREND_BEARISH) {
-            return (buyersState == LIQ_CLEAN || buyersState == LIQ_RALLYE);
-        }
-        return false;
+        return canRallyeStart();
     }
     
     // SMV Rule #5: "Without any liquidity taken, no rally can be launched"
     bool canRallyeStart() {
-        Trend currentTrend = macdMarketStructure.getLatestTrend();
-        if (currentTrend == TREND_BULLISH) {
+        if (isBullishTrend()) {
             return (sellersState == LIQ_CLEAN || sellersState == LIQ_RALLYE);
         }
-        else if (currentTrend == TREND_BEARISH) {
+        else {
             return (buyersState == LIQ_CLEAN || buyersState == LIQ_RALLYE);
         }
-        return false;
     }
     
     int getSweepIndex() {
-        Trend currentTrend = macdMarketStructure.getLatestTrend();
-        if (currentTrend == TREND_BULLISH) {
-            return sellersCleanIndex;
-        }
-        else if (currentTrend == TREND_BEARISH) {
-            return buyersCleanIndex;
-        }
-        return -1;
+        return isBullishTrend() ? sellersCleanIndex : buyersCleanIndex;
     }
     
     double getSweepPrice() {
-        Trend currentTrend = macdMarketStructure.getLatestTrend();
-        if (currentTrend == TREND_BULLISH) {
-            return sellersCleanPrice;
-        }
-        else if (currentTrend == TREND_BEARISH) {
-            return buyersCleanPrice;
-        }
-        return 0;
+        return isBullishTrend() ? sellersCleanPrice : buyersCleanPrice;
     }
 };
 

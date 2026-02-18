@@ -16,6 +16,7 @@ private:
     double equilibriumPrice;
     double currentPrice;
     PriceZone currentZone;
+    Trend cachedTrend;  // Cache trend to avoid redundant calls
     
     void calculateEquilibrium() {
         // Get the 50% Fibonacci level (index 0 in the array {0.5, 0.618, 0.786, 0.887})
@@ -54,6 +55,7 @@ public:
         equilibriumPrice = 0;
         currentPrice = 0;
         currentZone = ZONE_NONE;
+        cachedTrend = TREND_NONE;
         index = 0;
     }
     
@@ -66,6 +68,9 @@ public:
     void update(int iIndex, int totalBars) {
         if (iIndex >= totalBars - 1) return;
         index = iIndex;
+        
+        // Cache trend to avoid redundant calls in canBuy() and canSell()
+        cachedTrend = macdMarketStructure.getLatestTrend();
         
         calculateEquilibrium();
         determineZone();
@@ -90,14 +95,12 @@ public:
     
     // SMV Rule: Buy only in discount during bullish trend
     bool canBuy() {
-        Trend currentTrend = macdMarketStructure.getLatestTrend();
-        return (currentTrend == TREND_BULLISH && currentZone == ZONE_DISCOUNT);
+        return (cachedTrend == TREND_BULLISH && currentZone == ZONE_DISCOUNT);
     }
     
     // SMV Rule: Sell only in premium during bearish trend
     bool canSell() {
-        Trend currentTrend = macdMarketStructure.getLatestTrend();
-        return (currentTrend == TREND_BEARISH && currentZone == ZONE_PREMIUM);
+        return (cachedTrend == TREND_BEARISH && currentZone == ZONE_PREMIUM);
     }
     
     // Get current price zone
