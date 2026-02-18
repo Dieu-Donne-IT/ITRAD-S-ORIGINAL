@@ -19,11 +19,12 @@ private:
     Trend cachedTrend;  // Cache trend to avoid redundant calls
     
     void calculateEquilibrium() {
-        // Get the 50% Fibonacci level (index 0 in the array {0.5, 0.618, 0.786, 0.887})
-        // This index is defined in Fibonacci.mqh constructor (line 85)
-        // If Fibonacci levels array changes, this index must be updated accordingly
+        // Get the 50% Fibonacci level from the array {0.5, 0.618, 0.786, 0.887}
+        // Index 0 is defined in Fibonacci.mqh constructor (line 85)
+        const int FIBO_50_PERCENT_INDEX = 0;  // Index of 50% level
+        
         if (fibonacci.isFiboRetraceCalculated) {
-            equilibriumPrice = fibonacci.fiboRetrace.getFiboLevel(0);
+            equilibriumPrice = fibonacci.fiboRetrace.getFiboLevel(FIBO_50_PERCENT_INDEX);
         }
         else {
             equilibriumPrice = 0;
@@ -38,10 +39,11 @@ private:
         
         currentPrice = barData.GetClose(index);
         
-        // Define tolerance around equilibrium: 0.1% of price (multiplier: 0.001)
+        // Define tolerance around equilibrium (0.1% = 0.001 multiplier)
         // This accounts for minor price fluctuations and prevents zone flickering
-        // Can be adjusted for different asset classes or timeframes if needed
-        double tolerance = currentPrice * 0.001;
+        // Adjust this value for different asset classes or timeframes if needed
+        const double EQUILIBRIUM_TOLERANCE_MULTIPLIER = 0.001;
+        double tolerance = currentPrice * EQUILIBRIUM_TOLERANCE_MULTIPLIER;
         
         if (MathAbs(currentPrice - equilibriumPrice) <= tolerance) {
             currentZone = ZONE_EQUILIBRIUM;

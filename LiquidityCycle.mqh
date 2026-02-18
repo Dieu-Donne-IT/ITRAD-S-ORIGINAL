@@ -34,8 +34,8 @@ private:
         double currentClose = barData.GetClose(index);
         double currentOpen = barData.GetOpen(index);
         
-        // Check if wick broke above target but body closed at or below
-        if (currentHigh > targetPrice) {
+        // Check if wick touched/broke above target but body closed at or below
+        if (currentHigh >= targetPrice) {
             double bodyTop = MathMax(currentOpen, currentClose);
             if (bodyTop <= targetPrice) {
                 return true;
@@ -50,8 +50,8 @@ private:
         double currentClose = barData.GetClose(index);
         double currentOpen = barData.GetOpen(index);
         
-        // Check if wick broke below target but body closed at or above
-        if (currentLow < targetPrice) {
+        // Check if wick touched/broke below target but body closed at or above
+        if (currentLow <= targetPrice) {
             double bodyBottom = MathMin(currentOpen, currentClose);
             if (bodyBottom >= targetPrice) {
                 return true;
