@@ -96,12 +96,18 @@ private:
                 }
             }
         }
+        else {
+            // Reset sellers state when trend is not bullish to avoid stale data
+            sellersState = LIQ_NONE;
+            sellersIntactIndex = -1;
+            sellersCleanIndex = -1;
+        }
     }
     
     // Update ICRB (Buyers - Lows)
     // Tracks SSL (Sell Side Liquidity) - relevant during BEARISH trends
     void updateBuyersState() {
-        if (!isBullishTrend()) {
+        if (cachedTrend == TREND_BEARISH) {
             int prevLowIndex = macdMarketStructure.getPrevMajorLowIndex();
             double prevLowPrice = macdMarketStructure.getPrevMajorLowPrice();
             
@@ -133,6 +139,12 @@ private:
                     }
                 }
             }
+        }
+        else {
+            // Reset buyers state when trend is not bearish to avoid stale data
+            buyersState = LIQ_NONE;
+            buyersIntactIndex = -1;
+            buyersCleanIndex = -1;
         }
     }
     
