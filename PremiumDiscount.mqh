@@ -20,6 +20,8 @@ private:
     
     void calculateEquilibrium() {
         // Get the 50% Fibonacci level (index 0 in the array {0.5, 0.618, 0.786, 0.887})
+        // This index is defined in Fibonacci.mqh constructor (line 85)
+        // If Fibonacci levels array changes, this index must be updated accordingly
         if (fibonacci.isFiboRetraceCalculated) {
             equilibriumPrice = fibonacci.fiboRetrace.getFiboLevel(0);
         }

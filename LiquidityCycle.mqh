@@ -107,7 +107,7 @@ private:
     // Update ICRB (Buyers - Lows)
     // Tracks SSL (Sell Side Liquidity) - relevant during BEARISH trends
     void updateBuyersState() {
-        if (cachedTrend == TREND_BEARISH) {
+        if (isBearishTrend()) {
             int prevLowIndex = macdMarketStructure.getPrevMajorLowIndex();
             double prevLowPrice = macdMarketStructure.getPrevMajorLowPrice();
             
@@ -148,9 +148,13 @@ private:
         }
     }
     
-    // Helper method to check current trend (uses cached value)
+    // Helper methods to check current trend (uses cached value)
     bool isBullishTrend() {
         return cachedTrend == TREND_BULLISH;
+    }
+    
+    bool isBearishTrend() {
+        return cachedTrend == TREND_BEARISH;
     }
 
 public:
@@ -234,7 +238,7 @@ public:
         if (isBullishTrend()) {
             return (sellersState == LIQ_CLEAN || sellersState == LIQ_RALLYE);
         }
-        else if (cachedTrend == TREND_BEARISH) {
+        else if (isBearishTrend()) {
             return (buyersState == LIQ_CLEAN || buyersState == LIQ_RALLYE);
         }
         else {
@@ -246,7 +250,7 @@ public:
         if (isBullishTrend()) {
             return sellersCleanIndex;
         }
-        else if (cachedTrend == TREND_BEARISH) {
+        else if (isBearishTrend()) {
             return buyersCleanIndex;
         }
         else {
@@ -258,7 +262,7 @@ public:
         if (isBullishTrend()) {
             return sellersCleanPrice;
         }
-        else if (cachedTrend == TREND_BEARISH) {
+        else if (isBearishTrend()) {
             return buyersCleanPrice;
         }
         else {
