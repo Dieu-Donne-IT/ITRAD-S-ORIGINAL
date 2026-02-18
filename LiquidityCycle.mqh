@@ -234,17 +234,36 @@ public:
         if (isBullishTrend()) {
             return (sellersState == LIQ_CLEAN || sellersState == LIQ_RALLYE);
         }
-        else {
+        else if (cachedTrend == TREND_BEARISH) {
             return (buyersState == LIQ_CLEAN || buyersState == LIQ_RALLYE);
+        }
+        else {
+            return false;  // TREND_NONE - no rally possible
         }
     }
     
     int getSweepIndex() {
-        return isBullishTrend() ? sellersCleanIndex : buyersCleanIndex;
+        if (isBullishTrend()) {
+            return sellersCleanIndex;
+        }
+        else if (cachedTrend == TREND_BEARISH) {
+            return buyersCleanIndex;
+        }
+        else {
+            return -1;  // TREND_NONE - no valid sweep
+        }
     }
     
     double getSweepPrice() {
-        return isBullishTrend() ? sellersCleanPrice : buyersCleanPrice;
+        if (isBullishTrend()) {
+            return sellersCleanPrice;
+        }
+        else if (cachedTrend == TREND_BEARISH) {
+            return buyersCleanPrice;
+        }
+        else {
+            return 0;  // TREND_NONE - no valid sweep
+        }
     }
 };
 
