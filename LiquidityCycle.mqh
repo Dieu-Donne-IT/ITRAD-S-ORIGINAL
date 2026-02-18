@@ -61,9 +61,7 @@ private:
     
     // Update ICRS (Sellers - Highs)
     void updateSellersState() {
-        Trend currentTrend = macdMarketStructure.getLatestTrend();
-        
-        if (currentTrend == TREND_BULLISH) {
+        if (isBullishTrend()) {
             int prevHighIndex = macdMarketStructure.getPrevMajorHighIndex();
             double prevHighPrice = macdMarketStructure.getPrevMajorHighPrice();
             
@@ -100,9 +98,7 @@ private:
     
     // Update ICRB (Buyers - Lows)
     void updateBuyersState() {
-        Trend currentTrend = macdMarketStructure.getLatestTrend();
-        
-        if (currentTrend == TREND_BEARISH) {
+        if (!isBullishTrend()) {
             int prevLowIndex = macdMarketStructure.getPrevMajorLowIndex();
             double prevLowPrice = macdMarketStructure.getPrevMajorLowPrice();
             
@@ -209,6 +205,7 @@ public:
         }
     }
     
+    // Check if sweep has completed (same as canRallyeStart per SMV Rule #5)
     bool isSweepComplete() {
         return canRallyeStart();
     }
