@@ -11,6 +11,7 @@ private:
     MacdMarketStructureClass* macdMarketStructure;
     
     int index;
+    Trend cachedTrend;  // Cache trend to avoid redundant calls
     
     // ICRB - Intact Clean Rallye Buyers (for Lows - SSL)
     LiquidityState buyersState;
@@ -60,6 +61,7 @@ private:
     }
     
     // Update ICRS (Sellers - Highs)
+    // Tracks BSL (Buy Side Liquidity) - relevant during BULLISH trends
     void updateSellersState() {
         if (isBullishTrend()) {
             int prevHighIndex = macdMarketStructure.getPrevMajorHighIndex();
@@ -97,6 +99,7 @@ private:
     }
     
     // Update ICRB (Buyers - Lows)
+    // Tracks SSL (Sell Side Liquidity) - relevant during BEARISH trends
     void updateBuyersState() {
         if (!isBullishTrend()) {
             int prevLowIndex = macdMarketStructure.getPrevMajorLowIndex();
@@ -133,9 +136,9 @@ private:
         }
     }
     
-    // Helper method to check current trend
+    // Helper method to check current trend (uses cached value)
     bool isBullishTrend() {
-        return macdMarketStructure.getLatestTrend() == TREND_BULLISH;
+        return cachedTrend == TREND_BULLISH;
     }
 
 public:
@@ -150,6 +153,7 @@ public:
         sellersIntactPrice = 0;
         sellersCleanIndex = -1;
         sellersCleanPrice = 0;
+        cachedTrend = TREND_NONE;
         index = 0;
     }
     
@@ -161,6 +165,9 @@ public:
     void update(int iIndex, int totalBars) {
         if (iIndex >= totalBars - 1) return;
         index = iIndex;
+        
+        // Cache trend to avoid redundant calls
+        cachedTrend = macdMarketStructure.getLatestTrend();
         
         updateSellersState();
         updateBuyersState();
