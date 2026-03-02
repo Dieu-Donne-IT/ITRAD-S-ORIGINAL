@@ -154,37 +154,82 @@ private:
    }
    
    void calcBearishOrderBlock(){
-      int fractalFromRange[],result[];
-      fractal.GetFractalFromRange(macdMarketStructure.getLatestMajorHighIndex(),macdMarketStructure.getInducementIndex()-1,true,fractalFromRange);
+      int fractalFromRange[], result[], orderBlockIndices[];
+      fractal.GetFractalFromRange(
+         macdMarketStructure.getLatestMajorHighIndex(),
+         macdMarketStructure.getInducementIndex()-1,
+         true,
+         fractalFromRange
+      );
       
+      int fractalRemoveCount = ArraySize(fractalFromRange);
+      if(fractalRemoveCount == 0)
+         return; // nothing to do
       
-   
-      int tmp[];
-      ArrayResize(tmp, macdMarketStructure.getInducementIndex() - macdMarketStructure.getLatestMajorHighIndex()); // max possible size
-      int count = 0;
+      // Filter fractals below fibo level (for bearish: keep highs ABOVE fibo level)
+      double fiboLevel = fibonacci.fiboRetrace.getFiboLevel(0);
       
-      for(int i = 0; i<ArraySize(fractalFromRange); i++){
+      for(int i = fractalRemoveCount - 1; i >= 0; i--){
+         int fractalIndex = fractalFromRange[i];
+         double high = barData.GetHigh(fractalIndex);
          
-         InducementBand inducementBand = getInducementBand(fractalFromRange[i]);
+         if(high > fiboLevel){
+            ArrayRemove(fractalFromRange, i + 1); // Keep elements 0..i
+            break;
+         }
+      }
+      
+      int tmp[], orderBlockTmp[];
+      int maxSize = MathAbs(macdMarketStructure.getInducementIndex() - macdMarketStructure.getLatestMajorHighIndex());
+      if(maxSize < 1) maxSize = 1;
+      ArrayResize(tmp, maxSize);
+      ArrayResize(orderBlockTmp, maxSize);
+      int count = 0, orderBlockCount = 0;
+      
+      for(int i = 0; i < ArraySize(fractalFromRange); i++){
          
-         bool isFractalSweep = checkBearishFractalSweep(fractalFromRange[i],inducementBand);
+         int getFractal = fractalFromRange[i];
+         
+         InducementBand inducementBand = getInducementBand(getFractal);
+         
+         bool isFractalSweep = checkBearishFractalSweep(getFractal, inducementBand);
          
          if(isFractalSweep){
-            tmp[count++] = fractalFromRange[i];
+            bool isFvg = false;
+            
+            isFvg = identifyFVG(TREND_BEARISH, getFractal, getFractal+1, getFractal+2);
+            
+            // Check if orderblock is already taken
+            int highestHighIndex = barData.getHighestHighValueByRange(getFractal+3);
+            double highestHighPrice = barData.GetHigh(highestHighIndex);
+            
+            if(highestHighPrice >= barData.GetLow(getFractal)){
+               continue;
+            }
+            
+            if(isFvg){
+               orderBlockTmp[orderBlockCount++] = getFractal;
+            }
          }
-
+         
+         if(isFractalSweep){
+            tmp[count++] = getFractal;
+         }
       }
       
       ArrayResize(result, count);
-      for (int i = 0; i < count; i++){
+      for(int i = 0; i < count; i++){
          result[i] = tmp[i];
       }
       
-      /*
-      for(int i = 0; i<ArraySize(result); i++){
-         Print(i," : fractal sweep : ",barData.GetTime(result[i]));
+      ArrayResize(orderBlockIndices, orderBlockCount);
+      for(int i = 0; i < orderBlockCount; i++){
+         orderBlockIndices[i] = orderBlockTmp[i];
       }
-      */
+      
+      for(int i = 0; i < ArraySize(orderBlockIndices); i++){
+         Print(i, " : bearish orderblock : ", barData.GetTime(orderBlockIndices[i]));
+      }
          
          
    }
