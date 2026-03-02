@@ -44,7 +44,7 @@ private:
    }
    
    void calcBullishOrderBlock(){
-      int fractalFromRange[],result[],orderBlock[];
+      int fractalFromRange[],result[],orderBlockIndices[];
       fractal.GetFractalFromRange(macdMarketStructure.getLatestMajorLowIndex(),macdMarketStructure.getInducementIndex()-1,false,fractalFromRange);
       
       int fractalRemoveCount = ArraySize(fractalFromRange);
@@ -133,9 +133,9 @@ private:
          result[i] = tmp[i];
       }
       
-      ArrayResize(orderBlock, orderBlockCount);
+      ArrayResize(orderBlockIndices, orderBlockCount);
       for (int i = 0; i < orderBlockCount; i++){
-         orderBlock[i] = orderBlockTmp[i];
+         orderBlockIndices[i] = orderBlockTmp[i];
       }
       
       /*
@@ -145,8 +145,8 @@ private:
       */
       
       
-      for(int i = 0; i<ArraySize(orderBlock); i++){
-         Print(i," : orderblock : ",barData.GetTime(orderBlock[i]));
+      for(int i = 0; i<ArraySize(orderBlockIndices); i++){
+         Print(i," : orderblock : ",barData.GetTime(orderBlockIndices[i]));
       }
       
          
