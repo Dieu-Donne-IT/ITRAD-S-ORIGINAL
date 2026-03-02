@@ -115,6 +115,8 @@
 #include "BalanceOfPower.mqh";
 #include "BalanceOfPowerReverseCandle.mqh";
 #include "OrderBlock.mqh";
+#include "FairValueGap.mqh";
+#include "FVGDrawer.mqh";
 
 
 MACD macd;
@@ -130,6 +132,8 @@ PlotFiboOnChart plotFiboOnChart;
 BalanceOfPower balanceOfPower;
 BalanceOfPowerReverseCandle balanceOfPowerReverseCandle;
 OrderBlock orderBlock;
+FairValueGap fairValueGap;
+FVGDrawer fvgDrawer;
 
 double FibUpper[], FibLower[];  
 
@@ -204,6 +208,8 @@ int OnInit()
     fibonacci.init(&barData,&macdMarketStructure);
     plotFiboOnChart.init(&fibonacci,&barData);
     orderBlock.Init(&barData,&macdMarketStructure,&fractal,&insideBar,&fibonacci);
+    fairValueGap.Init(&barData);
+    fvgDrawer.Init(&fairValueGap, &barData);
     
 
     return(INIT_SUCCEEDED);
@@ -256,6 +262,8 @@ int OnCalculate(const int rates_total,
          fibonacci.update(i,rates_total);
          plotFiboOnChart.update(i,rates_total);
          orderBlock.update(i,rates_total);
+         fairValueGap.update(i,rates_total);
+         fvgDrawer.update(i,rates_total);
       }else{
          
          macdFractal.macdHighFractalBuffer[i] = EMPTY_VALUE;
@@ -290,4 +298,8 @@ int OnCalculate(const int rates_total,
 
    return rates_total;
    
+}
+
+void OnDeinit(const int reason) {
+   fvgDrawer.OnDeinit();
 }
