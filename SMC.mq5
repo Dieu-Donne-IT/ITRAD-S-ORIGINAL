@@ -99,8 +99,6 @@
 #property indicator_width16  1
 
 
-
-
 #include "BarData.mqh";
 #include "InsideBarClass.mqh";
 #include "ImpulsePullbackDetector.mqh";
@@ -115,6 +113,7 @@
 #include "BalanceOfPower.mqh";
 #include "BalanceOfPowerReverseCandle.mqh";
 #include "OrderBlock.mqh";
+#include "FairValueGap.mqh";
 #include "LiquidityCycle.mqh";
 #include "PremiumDiscount.mqh";
 
@@ -132,6 +131,7 @@ PlotFiboOnChart plotFiboOnChart;
 BalanceOfPower balanceOfPower;
 BalanceOfPowerReverseCandle balanceOfPowerReverseCandle;
 OrderBlock orderBlock;
+FairValueGap fairValueGap;
 LiquidityCycle liquidityCycle;
 PremiumDiscount premiumDiscount;
 
@@ -177,7 +177,6 @@ int OnInit()
     
     // mother bar fractal
     
-    
     // zigzag plot empty
     PlotIndexSetDouble(0,PLOT_EMPTY_VALUE,EMPTY_VALUE);
     PlotIndexSetDouble(1,PLOT_EMPTY_VALUE,EMPTY_VALUE);
@@ -195,9 +194,9 @@ int OnInit()
     PlotIndexSetDouble(13,PLOT_EMPTY_VALUE,EMPTY_VALUE);
     PlotIndexSetDouble(14,PLOT_EMPTY_VALUE,EMPTY_VALUE);
     PlotIndexSetDouble(15,PLOT_EMPTY_VALUE,EMPTY_VALUE);
-    PlotIndexSetDouble(16,PLOT_EMPTY_VALUE,EMPTY_VALUE);
-    PlotIndexSetDouble(17,PLOT_EMPTY_VALUE,EMPTY_VALUE);
-    PlotIndexSetDouble(18,PLOT_EMPTY_VALUE,EMPTY_VALUE);
+    PlotIndexSetDouble(16,PLOT_EMPTY_VALUE);
+    PlotIndexSetDouble(17,PLOT_EMPTY_VALUE);
+    PlotIndexSetDouble(18,PLOT_EMPTY_VALUE);
 
    balanceOfPowerReverseCandle.init(&balanceOfPower,&barData);
     insideBar.Init();
@@ -208,10 +207,11 @@ int OnInit()
     fibonacci.init(&barData,&macdMarketStructure);
     plotFiboOnChart.init(&fibonacci,&barData);
     orderBlock.Init(&barData,&macdMarketStructure,&fractal,&insideBar,&fibonacci);
+    fairValueGap.Init(&barData);
     liquidityCycle.Init(&barData,&macdMarketStructure);
     premiumDiscount.Init(&barData,&macdMarketStructure,&fibonacci);
     
-
+    
     return(INIT_SUCCEEDED);
 }
 
@@ -233,20 +233,8 @@ int OnCalculate(const int rates_total,
        return rates_total;
    }
 
-/*
-   ArrayResize(FibUpper,rates_total);
-   ArrayResize(FibLower,rates_total);
-   
-   for(int i = rates_total-1; i>rates_total-100; i--){
-      FibUpper[i] = high[rates_total-100];
-      FibLower[i] = low[rates_total-100];
-   }*/
-   
-   
-
    //int start = MathMax(rates_total - 500, 0);// for limit candle to process
    int start = prev_calculated == 0 ? 0 : prev_calculated - 1; // for normal use
-   //verticalLineBuffer[rates_total-10] = high[rates_total-10] * 10;
 
    for (int i = start; i < rates_total; i++) {  // Exclude last unclosed candle
       Print(i);
@@ -262,6 +250,7 @@ int OnCalculate(const int rates_total,
          fibonacci.update(i,rates_total);
          plotFiboOnChart.update(i,rates_total);
          orderBlock.update(i,rates_total);
+         fairValueGap.update(i,rates_total);
          liquidityCycle.update(i,rates_total);
          premiumDiscount.update(i,rates_total);
       }else{
@@ -273,22 +262,19 @@ int OnCalculate(const int rates_total,
       }
       
       
-      
-      
-
       }
       
       static string lastComment = "";
       string newComment = StringFormat(
           "=== SMV DASHBOARD ===\n"
-          "Trend: %s\n"
-          "Inducement Break: %s\n"
-          "Buyers (SSL): %s\n"
-          "Sellers (BSL): %s\n"
-          "Zone: %s\n"
-          "Can Buy: %s\n"
-          "Can Sell: %s\n"
-          "Rallye Possible: %s",
+          "Trend: %%s\n"
+          "Inducement Break: %%s\n"
+          "Buyers (SSL): %%s\n"
+          "Sellers (BSL): %%s\n"
+          "Zone: %%s\n"
+          "Can Buy: %%s\n"
+          "Can Sell: %%s\n"
+          "Rallye Possible: %%s",
           macdMarketStructure.getLatestTrendAsString(),
           (string)macdMarketStructure.isInducementBreak,
           liquidityCycle.getBuyersStateAsString(),
@@ -303,7 +289,7 @@ int OnCalculate(const int rates_total,
           Comment(newComment);
           lastComment = newComment;
       }
-      
+   
 
    return rates_total;
    
