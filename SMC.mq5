@@ -115,6 +115,7 @@
 #include "BalanceOfPower.mqh";
 #include "BalanceOfPowerReverseCandle.mqh";
 #include "OrderBlock.mqh";
+#include "FairValueGap.mqh";
 
 
 MACD macd;
@@ -130,8 +131,7 @@ PlotFiboOnChart plotFiboOnChart;
 BalanceOfPower balanceOfPower;
 BalanceOfPowerReverseCandle balanceOfPowerReverseCandle;
 OrderBlock orderBlock;
-
-double FibUpper[], FibLower[];  
+FairValueGap fairValueGap;
 
 int OnInit()
 {  
@@ -243,7 +243,6 @@ int OnCalculate(const int rates_total,
    //verticalLineBuffer[rates_total-10] = high[rates_total-10] * 10;
 
    for (int i = start; i < rates_total; i++) {  // Exclude last unclosed candle
-      Print(i);
       balanceOfPower.update(i,open[i],high[i],low[i],close[i],rates_total,3);
       balanceOfPowerReverseCandle.update(i,rates_total);
       macd.update(close[i],i,rates_total);
@@ -264,28 +263,36 @@ int OnCalculate(const int rates_total,
          macdMarketStructure.majorSwingLowBuffer[i] = EMPTY_VALUE;
       }
       
-      
-      
-      
+      // Dashboard temps réel - afficher seulement sur la dernière bougie
+      if(i == rates_total - 1) {
+          string trendStr = macdMarketStructure.getLatestTrendAsString();
+          string inducementStr = macdMarketStructure.isInducementBreak ? "YES" : "NO";
+          
+          FVGZone latestBullFVG, latestBearFVG;
+          string fvgBullStr = fairValueGap.getLatestBullishFVG(latestBullFVG) 
+                              ? StringFormat("%.5f - %.5f", latestBullFVG.lower, latestBullFVG.upper) 
+                              : "None";
+          string fvgBearStr = fairValueGap.getLatestBearishFVG(latestBearFVG) 
+                              ? StringFormat("%.5f - %.5f", latestBearFVG.lower, latestBearFVG.upper) 
+                              : "None";
+          
+          string dashboard = StringFormat(
+              "=== SMC Indicator ===\n"
+              "Trend         : %s\n"
+              "Inducement    : %s\n"
+              "FVG Bullish   : %s\n"
+              "FVG Bearish   : %s\n"
+              "FVG Count     : %d",
+              trendStr,
+              inducementStr,
+              fvgBullStr,
+              fvgBearStr,
+              fairValueGap.getFVGCount()
+          );
+          Comment(dashboard);
+      }
 
       }
-      
-      /*
-      static string lastComment = "";
-      string newComment = 
-      "Trend: " + macdMarketStructure.getLatestTrendAsString() + "\n"
-      +"Inducement Break: "+macdMarketStructure.isInducementBreak;
-
-      if(newComment != lastComment) {
-          Comment(newComment);
-          lastComment = newComment;
-      }*/
-      
-      /*
-      string comment = "TREND :  "+macdMarketStructure.getLatestTrendAsString()+"\n"
-      +"Inducement Taken   :  "+macdMarketStructure.isInducementBreak;
-      Comment(comment);
-      */
       
 
    return rates_total;
