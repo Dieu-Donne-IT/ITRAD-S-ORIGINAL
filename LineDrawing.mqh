@@ -14,7 +14,7 @@ public:
    
    void DrawStraightLine(int startIndex, int endIndex, double startValue){
       if(startIndex < 0 || endIndex < 0 || startIndex == -1 || endIndex == -1 || startIndex == EMPTY_VALUE || endIndex == EMPTY_VALUE){
-         Print("can't draw line, value is valid,(start index="+startIndex+",end index="+endIndex+")");
+         Print(StringFormat("can't draw line, value is valid,(start index=%d,end index=%d)", startIndex, endIndex));
          return;
       }
       for (int i = startIndex; i <= endIndex; i++) {

@@ -115,6 +115,7 @@
 #include "BalanceOfPower.mqh";
 #include "BalanceOfPowerReverseCandle.mqh";
 #include "OrderBlock.mqh";
+#include "FairValueGap.mqh";
 
 
 MACD macd;
@@ -130,6 +131,7 @@ PlotFiboOnChart plotFiboOnChart;
 BalanceOfPower balanceOfPower;
 BalanceOfPowerReverseCandle balanceOfPowerReverseCandle;
 OrderBlock orderBlock;
+FairValueGap fairValueGap;
 
 double FibUpper[], FibLower[];  
 
@@ -204,6 +206,7 @@ int OnInit()
     fibonacci.init(&barData,&macdMarketStructure);
     plotFiboOnChart.init(&fibonacci,&barData);
     orderBlock.Init(&barData,&macdMarketStructure,&fractal,&insideBar,&fibonacci);
+    fairValueGap.Init(&barData);
     
 
     return(INIT_SUCCEEDED);
@@ -256,6 +259,7 @@ int OnCalculate(const int rates_total,
          fibonacci.update(i,rates_total);
          plotFiboOnChart.update(i,rates_total);
          orderBlock.update(i,rates_total);
+         fairValueGap.update(i,rates_total);
       }else{
          
          macdFractal.macdHighFractalBuffer[i] = EMPTY_VALUE;
