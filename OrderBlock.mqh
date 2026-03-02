@@ -231,12 +231,6 @@ private:
       return false;
    }
    
-   void filterUnTakenFractal(int &fractals[],int &result[]){
-      for(int i = 0; i<ArraySize(fractals); i++){
-      
-      }
-   }
-   
    bool checkBullishFractalSweep(int fractalIndex,InducementBand &inducementBand){
       for(int j = fractalIndex-1; j > macdMarketStructure.getPrevMajorLowIndex(); j--){
          if(barData.GetLow(j) < inducementBand.lowerBand){
