@@ -72,7 +72,7 @@ private:
           double low = barData.GetLow(fractalIndex);
       
           if (low < fiboLevel) {
-              ArrayRemove(fractalFromRange, i + 1);  // Keep elements 0..i
+              ArrayResize(fractalFromRange, i + 1);  // Keep elements 0..i
               break;
           }
       }
@@ -120,7 +120,7 @@ private:
             //
             */
             
-            // check is orderblock are taked
+            // check is orderblock are taken
             int lowestLowIndex = barData.getLowestLowValueByRange(getFractal+3);
             double lowestLowPrice = barData.GetLow(lowestLowIndex);
             
@@ -189,7 +189,7 @@ private:
          int fractalIndex = fractalFromRange[i];
          double high = barData.GetHigh(fractalIndex);
          if (high > fiboLevel) {
-            ArrayRemove(fractalFromRange, i + 1);  // Keep elements 0..i
+            ArrayResize(fractalFromRange, i + 1);  // Keep elements 0..i
             break;
          }
       }
@@ -211,7 +211,7 @@ private:
 
             bool isFvg = identifyFVG(TREND_BEARISH, getFractal, getFractal+1, getFractal+2);
 
-            // check is orderblock are taked
+            // check is orderblock are taken
             int highestHighIndex = barData.getHighestHighValueByRange(getFractal+3);
             double highestHighPrice = barData.GetHigh(highestHighIndex);
 
