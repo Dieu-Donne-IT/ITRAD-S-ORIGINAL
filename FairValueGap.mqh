@@ -13,6 +13,10 @@ struct FVGZone {
    bool   isMitigated;
 };
 
+// Capacite maximale de stockage des FVG detectes
+// Defini hors de la classe car MQL5 n'autorise pas 'static const int' initialise dans la declaration de classe
+#define FVG_MAX_COUNT 50
+
 class FairValueGap{
 
 private:
@@ -20,7 +24,6 @@ private:
    FVGZone   fvgZones[];
    int       fvgCount;
    int       lastCalculatedIndex;
-   static const int MAX_FVG = 50;
 
    bool detectBullishFVG(int i, FVGZone &zone){
       double firstCandleHigh = barData.GetHigh(i - 2);
@@ -66,7 +69,7 @@ private:
    }
 
    void addFVG(FVGZone &zone){
-      if(fvgCount < MAX_FVG){
+      if(fvgCount < FVG_MAX_COUNT){
          fvgZones[fvgCount] = zone;
          fvgCount++;
       }
@@ -76,7 +79,7 @@ public:
    FairValueGap(){
       fvgCount            = 0;
       lastCalculatedIndex = -1;
-      ArrayResize(fvgZones, MAX_FVG);
+      ArrayResize(fvgZones, FVG_MAX_COUNT);
    }
 
    void Init(BarData* barDataInstance){
