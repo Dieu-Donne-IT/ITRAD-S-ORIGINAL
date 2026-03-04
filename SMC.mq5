@@ -120,6 +120,7 @@
 #include "FVGDrawer.mqh";
 #include "LiquidityCycle.mqh";
 #include "PremiumDiscount.mqh";
+#include "OrderBlockDrawing.mqh";
 
 
 MACD macd;
@@ -139,6 +140,7 @@ FairValueGap fairValueGap;
 FVGDrawer fvgDrawer;
 LiquidityCycle liquidityCycle;
 PremiumDiscount premiumDiscount;
+OrderBlockDrawing orderBlockDrawing;
 
 int OnInit()
 {  
@@ -215,6 +217,7 @@ int OnInit()
     fvgDrawer.Init(&fairValueGap,&barData);
     liquidityCycle.Init(&barData,&macdMarketStructure);
     premiumDiscount.Init(&barData,&macdMarketStructure,&fibonacci);
+    orderBlockDrawing.Init(&orderBlock,&barData);
     
 
     return(INIT_SUCCEEDED);
@@ -254,6 +257,7 @@ int OnCalculate(const int rates_total,
          fibonacci.update(i,rates_total);
          plotFiboOnChart.update(i,rates_total);
          orderBlock.update(i,rates_total);
+         orderBlockDrawing.update(i,rates_total);
          fairValueGap.update(i,rates_total);
          fvgDrawer.update(i,rates_total);
          liquidityCycle.update(i,rates_total);
@@ -267,26 +271,68 @@ int OnCalculate(const int rates_total,
       }
       
       if(i == rates_total - 1) {
-         string comment = StringFormat(
-            "=== SMV DASHBOARD ===\n"
-            "Trend: %s\n"
-            "Inducement Break: %s\n"
-            "Buyers State (ICRB): %s\n"
-            "Sellers State (ICRS): %s\n"
-            "Current Zone: %s\n"
-            "Can Buy: %s\n"
-            "Can Sell: %s\n"
-            "Rallye Possible: %s",
-            macdMarketStructure.getLatestTrendAsString(),
-            (string)macdMarketStructure.isInducementBreak,
-            liquidityCycle.getBuyersStateAsString(),
-            liquidityCycle.getSellersStateAsString(),
-            premiumDiscount.getCurrentZoneAsString(),
-            (string)premiumDiscount.canBuy(),
-            (string)premiumDiscount.canSell(),
-            (string)liquidityCycle.canRallyeStart()
+         string trendStr = macdMarketStructure.getLatestTrendAsString();
+         string inducementStr = macdMarketStructure.isInducementBreak ? "YES" : "NO";
+
+         FVGZone latestBullFVG, latestBearFVG;
+         string fvgBullStr = fairValueGap.getLatestBullishFVG(latestBullFVG)
+                             ? StringFormat("%.5f - %.5f", latestBullFVG.lower, latestBullFVG.upper)
+                             : "None";
+         string fvgBearStr = fairValueGap.getLatestBearishFVG(latestBearFVG)
+                             ? StringFormat("%.5f - %.5f", latestBearFVG.lower, latestBearFVG.upper)
+                             : "None";
+
+         string buyersStr, sellersStr;
+         switch(liquidityCycle.getBuyersState()) {
+            case LIQ_INTACT:  buyersStr = "INTACT";  break;
+            case LIQ_CLEAN:   buyersStr = "CLEAN";   break;
+            case LIQ_RALLYE:  buyersStr = "RALLYE";  break;
+            default:          buyersStr = "NONE";
+         }
+         switch(liquidityCycle.getSellersState()) {
+            case LIQ_INTACT:  sellersStr = "INTACT";  break;
+            case LIQ_CLEAN:   sellersStr = "CLEAN";   break;
+            case LIQ_RALLYE:  sellersStr = "RALLYE";  break;
+            default:          sellersStr = "NONE";
+         }
+
+         string zoneStr;
+         PriceZone zone = premiumDiscount.getCurrentZone();
+         switch(zone) {
+            case ZONE_PREMIUM:     zoneStr = "PREMIUM";     break;
+            case ZONE_DISCOUNT:    zoneStr = "DISCOUNT";    break;
+            case ZONE_EQUILIBRIUM: zoneStr = "EQUILIBRIUM"; break;
+            default:               zoneStr = "NONE";
+         }
+
+         string canBuyStr  = premiumDiscount.canBuy()  ? "YES" : "NO";
+         string canSellStr = premiumDiscount.canSell() ? "YES" : "NO";
+
+         string obBullCount = IntegerToString(orderBlock.getBullishOBCount());
+         string obBearCount = IntegerToString(orderBlock.getBearishOBCount());
+         string obActiveStr = (orderBlock.hasActiveBullishOB() ? "BULL " : "") +
+                              (orderBlock.hasActiveBearishOB() ? "BEAR"  : "");
+
+         string dashboard = StringFormat(
+            "=== SMC / SMV Indicator ===\n"
+            "Trend         : %s\n"
+            "Inducement    : %s\n"
+            "Zone          : %s\n"
+            "Can Buy       : %s | Can Sell : %s\n"
+            "SSL (Buyers)  : %s\n"
+            "BSL (Sellers) : %s\n"
+            "FVG Bullish   : %s\n"
+            "FVG Bearish   : %s\n"
+            "FVG Count     : %d\n"
+            "OB Bull/Bear  : %s / %s  Active: %s",
+            trendStr, inducementStr,
+            zoneStr, canBuyStr, canSellStr,
+            buyersStr, sellersStr,
+            fvgBullStr, fvgBearStr,
+            fairValueGap.getFVGCount(),
+            obBullCount, obBearCount, obActiveStr
          );
-         Comment(comment);
+         Comment(dashboard);
       }
       
    }
@@ -297,4 +343,6 @@ int OnCalculate(const int rates_total,
 
 void OnDeinit(const int reason) {
    fvgDrawer.OnDeinit();
+   orderBlockDrawing.OnDeinit();
+   Comment("");
 }

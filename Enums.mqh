@@ -86,5 +86,12 @@ enum PriceZone {
     ZONE_EQUILIBRIUM   // At 50% level
 };
 
+// Order Block states (SMV concept)
+enum OrderBlockState {
+   OB_NONE,
+   OB_ACTIVE,       // Valid OB, price has not yet entered
+   OB_MITIGATED,    // Price entered the zone (partial retest)
+   OB_INVALIDATED   // Price closed through the zone — OB is void
+};
 
 #endif
