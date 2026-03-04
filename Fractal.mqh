@@ -33,11 +33,10 @@ int highFractalCount, lowFractalCount;        // Count of collected fractals'
       
       highFractalCount = lowFractalCount = 0;
 
-
       ArrayInitialize(highFractalBuffer, EMPTY_VALUE);
       ArrayInitialize(lowFractalBuffer, EMPTY_VALUE);
-      ArrayInitialize(highFractalIndices, EMPTY_VALUE);
-      ArrayInitialize(lowFractalIndices, EMPTY_VALUE);
+      ArrayInitialize(highFractalIndices, -1);   // use -1 (int sentinel), not EMPTY_VALUE (double)
+      ArrayInitialize(lowFractalIndices, -1);    // use -1 (int sentinel), not EMPTY_VALUE (double)
       
       ArrayResize(highFractalIndices, 10); // Initialize with a capacity of 10
       ArrayResize(lowFractalIndices, 10); // Initialize with a capacity of 10
@@ -65,7 +64,6 @@ int highFractalCount, lowFractalCount;        // Count of collected fractals'
             latestFractalHighPrice = high[getLatestSwingHigh];
             
             //AddToFractalArray(highFractalIndices, highFractalCount, getLatestSwingHigh);
-
             
          }
       }
@@ -84,7 +82,6 @@ int highFractalCount, lowFractalCount;        // Count of collected fractals'
             latestFractalLowPrice = low[getLatestSwingLow];
             
             //AddToFractalArray(lowFractalIndices, lowFractalCount, getLatestSwingLow);
-
             
          }
       }
@@ -125,7 +122,6 @@ int highFractalCount, lowFractalCount;        // Count of collected fractals'
    for (int i = 0; i < count; i++)
       result[i] = tmp[i];
 }
-
    
    int GetLatestHighFractalIndex() {
       if (highFractalCount > 0) {
