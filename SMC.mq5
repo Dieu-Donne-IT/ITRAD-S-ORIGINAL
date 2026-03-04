@@ -116,6 +116,9 @@
 #include "BalanceOfPowerReverseCandle.mqh";
 #include "OrderBlock.mqh";
 #include "FairValueGap.mqh";
+#include "LiquidityCycle.mqh";
+#include "PremiumDiscount.mqh";
+#include "TradeSignal.mqh";
 
 
 MACD macd;
@@ -132,6 +135,9 @@ BalanceOfPower balanceOfPower;
 BalanceOfPowerReverseCandle balanceOfPowerReverseCandle;
 OrderBlock orderBlock;
 FairValueGap fairValueGap;
+LiquidityCycle liquidityCycle;
+PremiumDiscount premiumDiscount;
+TradeSignal tradeSignal;
 
 double FibUpper[], FibLower[];  
 
@@ -207,6 +213,9 @@ int OnInit()
     plotFiboOnChart.init(&fibonacci,&barData);
     orderBlock.Init(&barData,&macdMarketStructure,&fractal,&insideBar,&fibonacci);
     fairValueGap.Init(&barData);
+    liquidityCycle.Init();
+    premiumDiscount.Init();
+    tradeSignal.Init(&macdMarketStructure,&liquidityCycle,&premiumDiscount,&orderBlock,&fairValueGap,&barData);
     
 
     return(INIT_SUCCEEDED);
@@ -260,6 +269,7 @@ int OnCalculate(const int rates_total,
          plotFiboOnChart.update(i,rates_total);
          orderBlock.update(i,rates_total);
          fairValueGap.update(i,rates_total);
+         tradeSignal.update(i,rates_total);
       }else{
          
          macdFractal.macdHighFractalBuffer[i] = EMPTY_VALUE;
@@ -271,6 +281,29 @@ int OnCalculate(const int rates_total,
       
       
       
+      if(i == rates_total - 1) {
+         string dashboard = StringFormat(
+            "=== SMC Indicator ===\n"
+            "Trend         : %s\n"
+            "Inducement    : %s\n"
+            "Buyers State  : %s\n"
+            "Sellers State : %s\n"
+            "Zone          : %s\n"
+            "OB Bull Count : %d\n"
+            "OB Bear Count : %d\n"
+            "--- Signal ---\n"
+            "%s",
+            macdMarketStructure.getLatestTrendAsString(),
+            macdMarketStructure.isInducementBreak ? "YES" : "NO",
+            liquidityCycle.getBuyersStateAsString(),
+            liquidityCycle.getSellersStateAsString(),
+            premiumDiscount.getZoneAsString(),
+            orderBlock.getBullishOBCount(),
+            orderBlock.getBearishOBCount(),
+            tradeSignal.getSignalAsString()
+         );
+         Comment(dashboard);
+      }
 
       }
       

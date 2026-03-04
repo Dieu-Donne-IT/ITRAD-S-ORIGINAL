@@ -811,6 +811,14 @@ public:
       return latestMajorLowPrice;
    }
    
+   double getPrevMajorHighPrice(){
+      return prevMajorHighPrice;
+   }
+   
+   double getPrevMajorLowPrice(){
+      return prevMajorLowPrice;
+   }
+   
    bool getInducementBreak(){
       return isInducementBreak;
    }
