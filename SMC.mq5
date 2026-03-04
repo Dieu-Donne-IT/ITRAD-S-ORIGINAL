@@ -115,6 +115,7 @@
 #include "BalanceOfPower.mqh";
 #include "BalanceOfPowerReverseCandle.mqh";
 #include "OrderBlock.mqh";
+#include "OrderBlockDrawing.mqh";
 #include "FairValueGap.mqh";
 
 
@@ -131,6 +132,7 @@ PlotFiboOnChart plotFiboOnChart;
 BalanceOfPower balanceOfPower;
 BalanceOfPowerReverseCandle balanceOfPowerReverseCandle;
 OrderBlock orderBlock;
+OrderBlockDrawing orderBlockDrawing;
 FairValueGap fairValueGap;
 
 double FibUpper[], FibLower[];  
@@ -206,6 +208,7 @@ int OnInit()
     fibonacci.init(&barData,&macdMarketStructure);
     plotFiboOnChart.init(&fibonacci,&barData);
     orderBlock.Init(&barData,&macdMarketStructure,&fractal,&insideBar,&fibonacci);
+    orderBlockDrawing.Init(&orderBlock,&barData);
     fairValueGap.Init(&barData);
     
 
@@ -259,6 +262,7 @@ int OnCalculate(const int rates_total,
          fibonacci.update(i,rates_total);
          plotFiboOnChart.update(i,rates_total);
          orderBlock.update(i,rates_total);
+         orderBlockDrawing.update(i,rates_total);
          fairValueGap.update(i,rates_total);
       }else{
          
@@ -274,16 +278,13 @@ int OnCalculate(const int rates_total,
 
       }
       
-      /*
-      static string lastComment = "";
-      string newComment = 
-      "Trend: " + macdMarketStructure.getLatestTrendAsString() + "\n"
-      +"Inducement Break: "+macdMarketStructure.isInducementBreak;
-
-      if(newComment != lastComment) {
-          Comment(newComment);
-          lastComment = newComment;
-      }*/
+      string comment = "TREND: " + macdMarketStructure.getLatestTrendAsString() + "\n"
+         + "Inducement Break: " + (string)macdMarketStructure.isInducementBreak + "\n"
+         + "Bullish OBs: " + (string)orderBlock.getBullishOBCount() + "\n"
+         + "Bearish OBs: " + (string)orderBlock.getBearishOBCount() + "\n"
+         + "Active Bull OB: " + (string)orderBlock.hasActiveBullishOB() + "\n"
+         + "Active Bear OB: " + (string)orderBlock.hasActiveBearishOB();
+      Comment(comment);
       
       /*
       string comment = "TREND :  "+macdMarketStructure.getLatestTrendAsString()+"\n"

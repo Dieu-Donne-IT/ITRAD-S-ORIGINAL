@@ -9,6 +9,15 @@
 #include "InsideBarClass.mqh";
 #include "Fibonacci.mqh";
 
+struct OrderBlockData {
+   int    index;       // bar index of the OB candle
+   double high;        // OB zone top
+   double low;         // OB zone bottom (= open of OB candle for SMV)
+   bool   isBullish;   // true = bullish OB (buy zone), false = bearish OB (sell zone)
+   bool   isActive;    // false once price closes through the OB
+   bool   isMitigated; // true once price entered the OB zone (partial fill)
+};
+
 class OrderBlock{
 
 private:
@@ -22,6 +31,11 @@ private:
    Fibonacci *fibonacci;
    
    int getMarketBreakAtIndex;
+
+   OrderBlockData bullishOrderBlocks[];
+   OrderBlockData bearishOrderBlocks[];
+   int bullishOBCount;
+   int bearishOBCount;
    
    struct InducementBand{
       double upperBand;
@@ -144,24 +158,47 @@ private:
       }
       */
       
-      
-      for(int i = 0; i<ArraySize(orderBlockIndices); i++){
+      ArrayResize(bullishOrderBlocks, orderBlockCount);
+      bullishOBCount = 0;
+      for(int i = 0; i < orderBlockCount; i++){
+         OrderBlockData ob;
+         ob.index      = orderBlockIndices[i];
+         ob.high       = barData.GetHigh(orderBlockIndices[i]);
+         ob.low        = barData.GetOpen(orderBlockIndices[i]);
+         ob.isBullish  = true;
+         ob.isActive   = true;
+         ob.isMitigated = false;
+         bullishOrderBlocks[bullishOBCount++] = ob;
          Print(i," : orderblock : ",barData.GetTime(orderBlockIndices[i]));
       }
-      
          
          
    }
    
    void calcBearishOrderBlock(){
-      int fractalFromRange[],result[];
+      int fractalFromRange[],result[],orderBlockIndices[];
       fractal.GetFractalFromRange(macdMarketStructure.getLatestMajorHighIndex(),macdMarketStructure.getInducementIndex()-1,true,fractalFromRange);
       
+      int fractalRemoveCount = ArraySize(fractalFromRange);
+      if (fractalRemoveCount == 0)
+         return; // nothing to do
       
+      double fiboLevel = fibonacci.fiboRetrace.getFiboLevel(0);
+      
+      for (int i = fractalRemoveCount - 1; i >= 0; i--) {
+         int fractalIndex = fractalFromRange[i];
+         double high = barData.GetHigh(fractalIndex);
+         if (high > fiboLevel) {
+            ArrayRemove(fractalFromRange, i + 1);  // Keep elements 0..i
+            break;
+         }
+      }
    
-      int tmp[];
+
+      int tmp[],orderBlockTmp[];
       ArrayResize(tmp, macdMarketStructure.getInducementIndex() - macdMarketStructure.getLatestMajorHighIndex()); // max possible size
-      int count = 0;
+      ArrayResize(orderBlockTmp, macdMarketStructure.getInducementIndex() - macdMarketStructure.getLatestMajorHighIndex()); // max possible size
+      int count = 0, orderBlockCount = 0;
       
       for(int i = 0; i<ArraySize(fractalFromRange); i++){
          
@@ -170,7 +207,23 @@ private:
          bool isFractalSweep = checkBearishFractalSweep(fractalFromRange[i],inducementBand);
          
          if(isFractalSweep){
-            tmp[count++] = fractalFromRange[i];
+            int getFractal = fractalFromRange[i];
+
+            bool isFvg = identifyFVG(TREND_BEARISH, getFractal, getFractal+1, getFractal+2);
+
+            // check is orderblock are taked
+            int highestHighIndex = barData.getHighestHighValueByRange(getFractal+3);
+            double highestHighPrice = barData.GetHigh(highestHighIndex);
+
+            if(highestHighPrice >= barData.GetLow(getFractal)){
+               continue;
+            }
+
+            if(isFvg){
+               orderBlockTmp[orderBlockCount++] = getFractal;
+            }
+
+            tmp[count++] = getFractal;
          }
 
       }
@@ -185,6 +238,25 @@ private:
          Print(i," : fractal sweep : ",barData.GetTime(result[i]));
       }
       */
+
+      ArrayResize(orderBlockIndices, orderBlockCount);
+      for (int i = 0; i < orderBlockCount; i++){
+         orderBlockIndices[i] = orderBlockTmp[i];
+      }
+
+      ArrayResize(bearishOrderBlocks, orderBlockCount);
+      bearishOBCount = 0;
+      for(int i = 0; i < orderBlockCount; i++){
+         OrderBlockData ob;
+         ob.index      = orderBlockIndices[i];
+         ob.high       = barData.GetHigh(orderBlockIndices[i]);
+         ob.low        = barData.GetOpen(orderBlockIndices[i]);
+         ob.isBullish  = false;
+         ob.isActive   = true;
+         ob.isMitigated = false;
+         bearishOrderBlocks[bearishOBCount++] = ob;
+         Print(i," : bearish orderblock : ",barData.GetTime(orderBlockIndices[i]));
+      }
          
          
    }
@@ -292,8 +364,8 @@ private:
    }
    
    
-   
-   
+
+
 public:
 
    void Init(BarData* barDataInstance,MacdMarketStructureClass* macdMarketStructureInstance,FractalClass* fractalInstance,InsideBarClass *insideBarInstance,Fibonacci *fibonacciInstance){
@@ -304,6 +376,8 @@ public:
       fibonacci = fibonacciInstance;
       
       isOrderBlockCalculated = false;
+      bullishOBCount = 0;
+      bearishOBCount = 0;
    }
    
    void update(int Iindex, int totalBars){
@@ -319,16 +393,56 @@ public:
             
          }
       }
+
+      // Invalidate bullish OBs when price breaches the zone
+      for(int i = 0; i < bullishOBCount; i++){
+         if(!bullishOrderBlocks[i].isActive) continue;
+         if(barData.GetLow(index) < bullishOrderBlocks[i].low){
+            bullishOrderBlocks[i].isActive = false;
+         } else if(barData.GetLow(index) < bullishOrderBlocks[i].high){
+            bullishOrderBlocks[i].isMitigated = true;
+         }
+      }
+
+      // Invalidate bearish OBs when price breaches the zone
+      for(int i = 0; i < bearishOBCount; i++){
+         if(!bearishOrderBlocks[i].isActive) continue;
+         if(barData.GetHigh(index) > bearishOrderBlocks[i].high){
+            bearishOrderBlocks[i].isActive = false;
+         } else if(barData.GetHigh(index) > bearishOrderBlocks[i].low){
+            bearishOrderBlocks[i].isMitigated = true;
+         }
+      }
       
       if(getMarketBreakAtIndex != macdMarketStructure.marketBreakAtIndex){
             //
             getMarketBreakAtIndex = macdMarketStructure.marketBreakAtIndex;
             isOrderBlockCalculated = false;
+            bullishOBCount = 0;
+            bearishOBCount = 0;
             
         }
       
       
       
+   }
+
+   int getBullishOBCount() { return bullishOBCount; }
+   int getBearishOBCount() { return bearishOBCount; }
+
+   OrderBlockData getBullishOB(int i) { return bullishOrderBlocks[i]; }
+   OrderBlockData getBearishOB(int i) { return bearishOrderBlocks[i]; }
+
+   bool hasActiveBullishOB() {
+      for(int i = 0; i < bullishOBCount; i++)
+         if(bullishOrderBlocks[i].isActive) return true;
+      return false;
+   }
+
+   bool hasActiveBearishOB() {
+      for(int i = 0; i < bearishOBCount; i++)
+         if(bearishOrderBlocks[i].isActive) return true;
+      return false;
    }
 
 }

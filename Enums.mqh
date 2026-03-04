@@ -70,5 +70,13 @@ enum FiboLevel {
     Fibo_Count  // This will automatically be equal to the number of elements (11)
 };
 
+
+// Order Block states (SMV concept)
+enum OrderBlockState {
+   OB_NONE,
+   OB_ACTIVE,       // Valid OB, price has not yet entered
+   OB_MITIGATED,    // Price entered the zone (partial retest)
+   OB_INVALIDATED   // Price closed through the zone — OB is void
+};
 
 #endif
