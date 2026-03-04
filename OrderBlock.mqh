@@ -9,6 +9,12 @@
 #include "InsideBarClass.mqh";
 #include "Fibonacci.mqh";
 
+struct OBZone {
+   double high;
+   double low;
+   int    index;
+};
+
 class OrderBlock{
 
 private:
@@ -330,6 +336,29 @@ public:
       
       
    }
+
+   // Stub implementations — full OB tracking will be added in a future PR
+   bool hasActiveBullishOB() { return false; }
+   bool hasActiveBearishOB() { return false; }
+
+   OBZone getBullishOB(int i) {
+      OBZone z;
+      z.high  = 0;
+      z.low   = 0;
+      z.index = -1;
+      return z;
+   }
+
+   OBZone getBearishOB(int i) {
+      OBZone z;
+      z.high  = 0;
+      z.low   = 0;
+      z.index = -1;
+      return z;
+   }
+
+   int getBullishOBCount() { return 0; }
+   int getBearishOBCount() { return 0; }
 
 }
 

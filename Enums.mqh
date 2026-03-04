@@ -55,6 +55,18 @@ enum FiboTopOrBottom{
    FIBO_BOTTOM
 };
 
+enum SignalType {
+   SIGNAL_NONE,
+   SIGNAL_BUY,
+   SIGNAL_SELL
+};
+
+enum LiquidityState {
+   LIQ_NONE,
+   LIQ_CLEAN,
+   LIQ_RALLYE
+};
+
 enum FiboLevel {
     Fibo_236,
     Fibo_382,
