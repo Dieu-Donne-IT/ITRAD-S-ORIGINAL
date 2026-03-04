@@ -70,21 +70,5 @@ enum FiboLevel {
     Fibo_Count  // This will automatically be equal to the number of elements (11)
 };
 
-// Liquidity cycle states (ICRB/ICRS - SMV concept)
-enum LiquidityState {
-    LIQ_NONE,
-    LIQ_INTACT,    // Level not yet swept - liquidity waiting
-    LIQ_CLEAN,     // Level swept (wick break) - liquidity taken
-    LIQ_RALLYE     // Post-sweep rally launched after BOS confirmation
-};
-
-// Premium/Discount zone (SMV simplified Fibonacci)
-enum PriceZone {
-    ZONE_NONE,
-    ZONE_PREMIUM,      // Above 50% - sell zone
-    ZONE_DISCOUNT,     // Below 50% - buy zone
-    ZONE_EQUILIBRIUM   // At 50% level
-};
-
 
 #endif
