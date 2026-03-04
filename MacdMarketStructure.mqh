@@ -803,14 +803,6 @@ public:
       return prevMajorHighIndex;
    }
    
-   double getPrevMajorHighPrice(){
-      return prevMajorHighPrice;
-   }
-   
-   double getPrevMajorLowPrice(){
-      return prevMajorLowPrice;
-   }
-   
    double getLatestmajorHighPrice(){
       return latestMajorHighPrice;
    }
