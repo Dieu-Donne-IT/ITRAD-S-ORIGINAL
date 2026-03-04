@@ -115,7 +115,11 @@
 #include "BalanceOfPower.mqh";
 #include "BalanceOfPowerReverseCandle.mqh";
 #include "OrderBlock.mqh";
+#include "DrawingUtils.mqh";
 #include "FairValueGap.mqh";
+#include "FVGDrawer.mqh";
+#include "LiquidityCycle.mqh";
+#include "PremiumDiscount.mqh";
 
 
 MACD macd;
@@ -132,8 +136,9 @@ BalanceOfPower balanceOfPower;
 BalanceOfPowerReverseCandle balanceOfPowerReverseCandle;
 OrderBlock orderBlock;
 FairValueGap fairValueGap;
-
-double FibUpper[], FibLower[];  
+FVGDrawer fvgDrawer;
+LiquidityCycle liquidityCycle;
+PremiumDiscount premiumDiscount;
 
 int OnInit()
 {  
@@ -207,6 +212,9 @@ int OnInit()
     plotFiboOnChart.init(&fibonacci,&barData);
     orderBlock.Init(&barData,&macdMarketStructure,&fractal,&insideBar,&fibonacci);
     fairValueGap.Init(&barData);
+    fvgDrawer.Init(&fairValueGap,&barData);
+    liquidityCycle.Init(&barData,&macdMarketStructure);
+    premiumDiscount.Init(&barData,&macdMarketStructure,&fibonacci);
     
 
     return(INIT_SUCCEEDED);
@@ -230,23 +238,10 @@ int OnCalculate(const int rates_total,
        return rates_total;
    }
 
-/*
-   ArrayResize(FibUpper,rates_total);
-   ArrayResize(FibLower,rates_total);
-   
-   for(int i = rates_total-1; i>rates_total-100; i--){
-      FibUpper[i] = high[rates_total-100];
-      FibLower[i] = low[rates_total-100];
-   }*/
-   
-   
-
    //int start = MathMax(rates_total - 500, 0);// for limit candle to process
    int start = prev_calculated == 0 ? 0 : prev_calculated - 1; // for normal use
-   //verticalLineBuffer[rates_total-10] = high[rates_total-10] * 10;
 
    for (int i = start; i < rates_total; i++) {  // Exclude last unclosed candle
-      Print(i);
       balanceOfPower.update(i,open[i],high[i],low[i],close[i],rates_total,3);
       balanceOfPowerReverseCandle.update(i,rates_total);
       macd.update(close[i],i,rates_total);
@@ -260,6 +255,9 @@ int OnCalculate(const int rates_total,
          plotFiboOnChart.update(i,rates_total);
          orderBlock.update(i,rates_total);
          fairValueGap.update(i,rates_total);
+         fvgDrawer.update(i,rates_total);
+         liquidityCycle.update(i,rates_total);
+         premiumDiscount.update(i,rates_total);
       }else{
          
          macdFractal.macdHighFractalBuffer[i] = EMPTY_VALUE;
@@ -268,30 +266,35 @@ int OnCalculate(const int rates_total,
          macdMarketStructure.majorSwingLowBuffer[i] = EMPTY_VALUE;
       }
       
-      
-      
-      
-
+      if(i == rates_total - 1) {
+         string comment = StringFormat(
+            "=== SMV DASHBOARD ===\n"
+            "Trend: %s\n"
+            "Inducement Break: %s\n"
+            "Buyers State (ICRB): %s\n"
+            "Sellers State (ICRS): %s\n"
+            "Current Zone: %s\n"
+            "Can Buy: %s\n"
+            "Can Sell: %s\n"
+            "Rallye Possible: %s",
+            macdMarketStructure.getLatestTrendAsString(),
+            (string)macdMarketStructure.isInducementBreak,
+            liquidityCycle.getBuyersStateAsString(),
+            liquidityCycle.getSellersStateAsString(),
+            premiumDiscount.getCurrentZoneAsString(),
+            (string)premiumDiscount.canBuy(),
+            (string)premiumDiscount.canSell(),
+            (string)liquidityCycle.canRallyeStart()
+         );
+         Comment(comment);
       }
       
-      /*
-      static string lastComment = "";
-      string newComment = 
-      "Trend: " + macdMarketStructure.getLatestTrendAsString() + "\n"
-      +"Inducement Break: "+macdMarketStructure.isInducementBreak;
-
-      if(newComment != lastComment) {
-          Comment(newComment);
-          lastComment = newComment;
-      }*/
-      
-      /*
-      string comment = "TREND :  "+macdMarketStructure.getLatestTrendAsString()+"\n"
-      +"Inducement Taken   :  "+macdMarketStructure.isInducementBreak;
-      Comment(comment);
-      */
-      
+   }
 
    return rates_total;
    
+}
+
+void OnDeinit(const int reason) {
+   fvgDrawer.OnDeinit();
 }
