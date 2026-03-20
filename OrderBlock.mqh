@@ -23,10 +23,61 @@ private:
    
    int getMarketBreakAtIndex;
    
+   string bullishOBNames[];
+   string bearishOBNames[];
+   
    struct InducementBand{
       double upperBand;
       double lowerBand;
    };
+   
+   void clearOrderBlockObjects(){
+      for(int i = 0; i < ArraySize(bullishOBNames); i++){
+         ObjectDelete(0, bullishOBNames[i]);
+      }
+      ArrayResize(bullishOBNames, 0);
+      
+      for(int i = 0; i < ArraySize(bearishOBNames); i++){
+         ObjectDelete(0, bearishOBNames[i]);
+      }
+      ArrayResize(bearishOBNames, 0);
+   }
+   
+   void drawBullishOB(int fractalIndex, int inducementIdx){
+      string objName = "SMC_BullOB_" + IntegerToString(fractalIndex);
+      ObjectDelete(0, objName);
+      datetime t1 = barData.GetTime(fractalIndex);
+      datetime t2 = barData.GetTime(inducementIdx);
+      double price1 = barData.GetHigh(fractalIndex);
+      double price2 = barData.GetLow(fractalIndex);
+      ObjectCreate(0, objName, OBJ_RECTANGLE, 0, t1, price1, t2, price2);
+      ObjectSetInteger(0, objName, OBJPROP_COLOR, clrGreen);
+      ObjectSetInteger(0, objName, OBJPROP_STYLE, STYLE_SOLID);
+      ObjectSetInteger(0, objName, OBJPROP_WIDTH, 1);
+      ObjectSetInteger(0, objName, OBJPROP_FILL, false);
+      ObjectSetInteger(0, objName, OBJPROP_BACK, true);
+      int sz = ArraySize(bullishOBNames);
+      ArrayResize(bullishOBNames, sz + 1);
+      bullishOBNames[sz] = objName;
+   }
+   
+   void drawBearishOB(int fractalIndex, int inducementIdx){
+      string objName = "SMC_BearOB_" + IntegerToString(fractalIndex);
+      ObjectDelete(0, objName);
+      datetime t1 = barData.GetTime(fractalIndex);
+      datetime t2 = barData.GetTime(inducementIdx);
+      double price1 = barData.GetHigh(fractalIndex);
+      double price2 = barData.GetLow(fractalIndex);
+      ObjectCreate(0, objName, OBJ_RECTANGLE, 0, t1, price1, t2, price2);
+      ObjectSetInteger(0, objName, OBJPROP_COLOR, clrRed);
+      ObjectSetInteger(0, objName, OBJPROP_STYLE, STYLE_SOLID);
+      ObjectSetInteger(0, objName, OBJPROP_WIDTH, 1);
+      ObjectSetInteger(0, objName, OBJPROP_FILL, false);
+      ObjectSetInteger(0, objName, OBJPROP_BACK, true);
+      int sz = ArraySize(bearishOBNames);
+      ArrayResize(bearishOBNames, sz + 1);
+      bearishOBNames[sz] = objName;
+   }
    
    void calcOrderBlock(){
       
@@ -63,12 +114,12 @@ private:
           }
       }
       
-
-      
       int tmp[],orderBlockTmp[];
       ArrayResize(tmp, macdMarketStructure.getInducementIndex() - macdMarketStructure.getLatestMajorLowIndex()); // max possible size
       ArrayResize(orderBlockTmp, macdMarketStructure.getInducementIndex() - macdMarketStructure.getLatestMajorLowIndex()); // max possible size
       int count = 0,orderBlockCount = 0;
+      
+      int inducementIndex = macdMarketStructure.getInducementIndex();
       
       for(int i = 0; i<ArraySize(fractalFromRange); i++){
       
@@ -84,43 +135,23 @@ private:
             
             isFvg = identifyFVG(TREND_BULLISH,getFractal,getFractal+1,getFractal+2);
             
-            /*
-            // mother bar fvg
-            if(insideBar.GetMotherBar(getFractal) == 1){
-               
-               int findInsideBarCount = getFractal+1;
-               while(findInsideBarCount < macdMarketStructure.getLatestMajorHighIndex()){
-                  int result = insideBar.GetInsideBar(findInsideBarCount);
-                  
-                  if(result == 0){
-                     isFvg = identifyFVG(TREND_BULLISH,getFractal,findInsideBarCount,findInsideBarCount+1);
-                     break;
-                  }
-                  
-                  findInsideBarCount++;
-               }
-               
-            }else{
-               isFvg = identifyFVG(TREND_BULLISH,getFractal,getFractal+1,getFractal+2);
-            }
-            //
-            */
-            
             // check is orderblock are taked
-            int lowestLowIndex = barData.getLowestLowValueByRange(getFractal+3);
+            int scanStart = getFractal + 3;
+            int scanCount = inducementIndex - scanStart;
+            if(scanCount <= 0) continue;
+            
+            int lowestLowIndex = barData.getLowestLowValueByRange(scanStart, scanCount);
             double lowestLowPrice = barData.GetLow(lowestLowIndex);
             
             if(lowestLowPrice<=barData.GetHigh(getFractal)){
                continue;
             }
             
-            //
-            
             if(isFvg){
                orderBlockTmp[orderBlockCount++] = getFractal;
+               drawBullishOB(getFractal, inducementIndex);
             }
          }
-         
          
          if(isFractalSweep){
             tmp[count++] = getFractal;
@@ -137,40 +168,70 @@ private:
       for (int i = 0; i < orderBlockCount; i++){
          orderBlockIndices[i] = orderBlockTmp[i];
       }
-      
-      /*
-      for(int i = 0; i<ArraySize(result); i++){
-         Print(i," : fractal sweep : ",barData.GetTime(result[i]));
-      }
-      */
-      
-      
-      for(int i = 0; i<ArraySize(orderBlockIndices); i++){
-         Print(i," : orderblock : ",barData.GetTime(orderBlockIndices[i]));
-      }
-      
-         
          
    }
    
    void calcBearishOrderBlock(){
-      int fractalFromRange[],result[];
+      int fractalFromRange[],result[],orderBlockIndices[];
       fractal.GetFractalFromRange(macdMarketStructure.getLatestMajorHighIndex(),macdMarketStructure.getInducementIndex()-1,true,fractalFromRange);
       
+      int fractalRemoveCount = ArraySize(fractalFromRange);
+      if (fractalRemoveCount == 0)
+         return; // nothing to do
       
-   
-      int tmp[];
+      double fiboLevel = fibonacci.fiboRetrace.getFiboLevel(0);
+      
+      for (int i = fractalRemoveCount - 1; i >= 0; i--) {
+          int fractalIndex = fractalFromRange[i];
+          double high = barData.GetHigh(fractalIndex);
+      
+          if (high > fiboLevel) {
+              ArrayRemove(fractalFromRange, i + 1);  // Keep elements 0..i
+              break;
+          }
+      }
+      
+      int tmp[],orderBlockTmp[];
       ArrayResize(tmp, macdMarketStructure.getInducementIndex() - macdMarketStructure.getLatestMajorHighIndex()); // max possible size
-      int count = 0;
+      ArrayResize(orderBlockTmp, macdMarketStructure.getInducementIndex() - macdMarketStructure.getLatestMajorHighIndex()); // max possible size
+      int count = 0,orderBlockCount = 0;
+      
+      int inducementIndex = macdMarketStructure.getInducementIndex();
       
       for(int i = 0; i<ArraySize(fractalFromRange); i++){
          
-         InducementBand inducementBand = getInducementBand(fractalFromRange[i]);
+         int getFractal = fractalFromRange[i];
          
-         bool isFractalSweep = checkBearishFractalSweep(fractalFromRange[i],inducementBand);
+         InducementBand inducementBand = getInducementBand(getFractal);
+         
+         bool isFractalSweep = checkBearishFractalSweep(getFractal,inducementBand);
          
          if(isFractalSweep){
-            tmp[count++] = fractalFromRange[i];
+         
+            bool isFvg = false;
+            
+            isFvg = identifyFVG(TREND_BEARISH,getFractal,getFractal+1,getFractal+2);
+            
+            // check is orderblock are taked
+            int scanStart = getFractal + 3;
+            int scanCount = inducementIndex - scanStart;
+            if(scanCount <= 0) continue;
+            
+            int highestHighIndex = barData.getHighestHighValueByRange(scanStart, scanCount);
+            double highestHighPrice = barData.GetHigh(highestHighIndex);
+            
+            if(highestHighPrice >= barData.GetLow(getFractal)){
+               continue;
+            }
+            
+            if(isFvg){
+               orderBlockTmp[orderBlockCount++] = getFractal;
+               drawBearishOB(getFractal, inducementIndex);
+            }
+         }
+         
+         if(isFractalSweep){
+            tmp[count++] = getFractal;
          }
 
       }
@@ -180,12 +241,10 @@ private:
          result[i] = tmp[i];
       }
       
-      /*
-      for(int i = 0; i<ArraySize(result); i++){
-         Print(i," : fractal sweep : ",barData.GetTime(result[i]));
+      ArrayResize(orderBlockIndices, orderBlockCount);
+      for (int i = 0; i < orderBlockCount; i++){
+         orderBlockIndices[i] = orderBlockTmp[i];
       }
-      */
-         
          
    }
    
@@ -229,12 +288,6 @@ private:
       }
    
       return false;
-   }
-   
-   void filterUnTakenFractal(int &fractals[],int &result[]){
-      for(int i = 0; i<ArraySize(fractals); i++){
-      
-      }
    }
    
    bool checkBullishFractalSweep(int fractalIndex,InducementBand &inducementBand){
@@ -321,10 +374,9 @@ public:
       }
       
       if(getMarketBreakAtIndex != macdMarketStructure.marketBreakAtIndex){
-            //
             getMarketBreakAtIndex = macdMarketStructure.marketBreakAtIndex;
+            clearOrderBlockObjects();
             isOrderBlockCalculated = false;
-            
         }
       
       
